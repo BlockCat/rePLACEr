@@ -35,9 +35,6 @@ public class Blocks {
 		this.id = in.readInt();
 		this.data = in.readByte();
 		this.world = world;
-		if (id == 54) {
-			System.out.println("chest");
-		}
 	}
 
 	public void save(DataOutputStream out) throws IOException {

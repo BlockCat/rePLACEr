@@ -3,9 +3,12 @@ package me.blockcat.placereplacer;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import me.blockcat.placereplacer.blocks.Blocks;
 import me.blockcat.placereplacer.blocks.BlocksChest;
@@ -14,6 +17,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.util.Vector;
 
 public class prRegion {
 
@@ -23,19 +27,19 @@ public class prRegion {
 	private int x2;
 	private int y2;
 	private int z2;
+
 	private String name;
+	private Vector v1;
+	private Vector v2;
 
 	List<Blocks> blocks = new ArrayList<Blocks>();
 	private World world;
 
 	public prRegion(World world, int x1, int y1, int z1, int x2, int y2, int z2) {
-		this.x1 = x1;
-		this.y1 = y1;
-		this.z1 = z1;
-		this.x2 = x2;
-		this.y2 = y2;
-		this.z2 = z2;
+		v1 = new Vector(x1,y1,z1);
+		v2 = new Vector(x2,y2,z2);
 		this.world = world;
+
 	}
 
 	public prRegion() {
@@ -46,24 +50,34 @@ public class prRegion {
 		this.name = name;
 		try {
 			world = w;
-			System.out.println(world.getName());
 			try {
 				while (true) {
 					int d = in.readInt();
-					if (d == 54) {
-						System.out.println("chest added.");
+					if (d == Material.CHEST.getId()) {
 						blocks.add(new BlocksChest(in, world));
 					} else {
 						blocks.add(new Blocks(in, world));
 					}
 				}
-			}
-			catch (EOFException d) {
-				System.out.println("done!");
+			} catch (EOFException d) {
 
-			}			
-		} catch(IOException e) {
+			}
+		} catch (Exception e) {
 			e.printStackTrace();
+		}
+	}
+
+	public void loadFromFile(String file, World world) {
+		File f = new File("plugins/placereplacer/saves/" +world.getName() + "/" +file + ".fr");
+		try {
+		GZIPInputStream gzipi = new GZIPInputStream(new FileInputStream(f));
+		DataInputStream in = new DataInputStream(gzipi);
+		
+		this.load(in, f.getName().replace(".fr", ""), world);
+		in.close();
+		gzipi.close();
+		} catch (IOException e) {
+			
 		}
 	}
 
@@ -85,39 +99,33 @@ public class prRegion {
 		int y4;
 		int z3;
 		int z4;
-		if (x1 > x2) {
-			x3 = x2;
-			x4 = x1;
-		} else {
-			x3 = x1;
-			x4 = x2;
-		}
-		if (y1 > y2) {
-			y3 = y2;
-			y4 = y1;
-		} else {
-			y3 = y1;
-			y4 = y2;
-		}
-		if (z1 > z2) {
-			z3 = z2;
-			z4 = z1;
-		} else {
-			z3 = z1;
-			z4 = z2;
-		}
+		Vector vMax = Vector.getMaximum(v1, v2);
+		Vector vMin = Vector.getMinimum(v1, v2);
+		
+		x3 = vMin.getBlockX();
+		x4 = vMax.getBlockX();
+		
+		
+		y3 = vMin.getBlockY();
+		y4 = vMax.getBlockY();
+		
+		z3 = vMin.getBlockZ();
+		z4 = vMax.getBlockZ();
+		
 
-		for (int x = x3; x <= x4 ; x++) {
+		for (int x = x3; x <= x4; x++) {
+			
 			for (int y = y3; y <= y4; y++) {
+				
 				for (int z = z3; z <= z4; z++) {
-
 					Block block = world.getBlockAt(x, y, z);
 					int id = block.getTypeId();
-					if (id == 54) {
-						blocks.add(new BlocksChest(world ,x,y,z,54, block.getData(), block.getState()));
-						System.out.println("added chest");
+					if (id == Material.CHEST.getId()) {
+						blocks.add(new BlocksChest(world, x, y, z, 54, block
+								.getData(), block.getState()));
 					} else {
-						blocks.add(new Blocks(world, x, y, z, id, block.getData()));
+						blocks.add(new Blocks(world, x, y, z, id, block
+								.getData()));
 					}
 				}
 			}
@@ -126,7 +134,8 @@ public class prRegion {
 
 	public void setName(String name) {
 		this.name = name;
-	}	
+	}
+
 	public String getName() {
 		return name;
 	}
@@ -135,7 +144,8 @@ public class prRegion {
 		return world.getName();
 	}
 
-	public void place() {
+	public void place(String string, World world) {
+		this.loadFromFile(string, world);
 		for (Blocks bl : blocks) {
 			bl.set();
 		}

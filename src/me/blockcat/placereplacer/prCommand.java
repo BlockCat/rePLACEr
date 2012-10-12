@@ -1,29 +1,28 @@
 package me.blockcat.placereplacer;
 
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
 public class prCommand implements CommandExecutor {
-	
-	
+
+
 	private PlaceReplacer plugin;
-	private List<prRegion> regions = new ArrayList<prRegion>();
-	private HashMap<Player, prRegion> selected = new HashMap<Player, prRegion>();
+	private List<String> regions = new ArrayList<String>();
+	private HashMap<Player, String> selected = new HashMap<Player, String>();
 
 	public prCommand(PlaceReplacer plugin) {
 		this.plugin = plugin;
@@ -35,56 +34,62 @@ public class prCommand implements CommandExecutor {
 			return false;
 
 		Player player = (Player) sender;
-		
+
 		if (args.length == 0) {
 			showHelp(player);
 			return true;
 		}
-		
+
 		if (args[0].equalsIgnoreCase("select")) {			
 			if (args.length > 1) {
-				for (prRegion region : regions) {
-					if (region.getName().equalsIgnoreCase(args[1])){
+				for (String region : regions) {
+
+					if (region.equalsIgnoreCase(args[1])){
 						selected.put(player, region);
-						player.sendMessage(ChatColor.GREEN + "Selected region: " + region.getName() + "!");
+						player.sendMessage(ChatColor.GREEN + "Selected region: " + region + "!");
 						return true;
 					}
 				}
 			}
 		} else if (args[0].equalsIgnoreCase("create")) {
-			prRegion pr = createNewRegion(player);
-			pr.newBlocks();
-			selected.put(player, pr);
-			player.sendMessage(ChatColor.GOLD + "Now name your region.");
-		} else if (args[0].equalsIgnoreCase("name")) {
+
 			if (args.length > 1) {
-				for (prRegion pr1 : regions) {
-					if (pr1.getName().equalsIgnoreCase(args[1])){
-						player.sendMessage(ChatColor.RED + "Name already in use!");
-						return false;
-					}						
+				if (regions.contains(args[1])) {
+					player.sendMessage(ChatColor.RED + "Name already in use!");
+					return true;
 				}
-				prRegion pr = selected.get(player);				
-				pr.setName(args[1]);	
-				regions.add(pr);
+				prRegion pr = createNewRegion(player);
+				pr.setName(args[1]);
+				pr.newBlocks();
+				selected.put(player, pr.getName());
+				regions.add(pr.getName());
 				save(pr);
 			} else {
-				
+				player.sendMessage(ChatColor.AQUA + "Please provide a name.");
 			}
-			
 		} else if (args[0].equalsIgnoreCase("set")) {
-			prRegion pr = selected.get(player);
-			pr.place();
+			prRegion pr = new prRegion();
+			pr.place(selected.get(player), player.getWorld());
 			player.sendMessage(ChatColor.GREEN + "Done");
+
 		} else if (args[0].equalsIgnoreCase("list")) {
 			String regs = ChatColor.GREEN + "";
-			for (prRegion pr : regions) {
-				regs += pr.getName() + "|";
+			for  (String region : regions) {
+				regs += region + "|";
 			}
 			player.sendMessage(regs);
 		}
-		
+
 		return true;
+	}
+
+	public void load() {
+		for (World w : Bukkit.getWorlds()) {
+			File f = new File(plugin.getDataFolder() , "saves/" + w.getName() + "/");
+			for (File file : f.listFiles()) {
+				regions.add(file.getName().replace(".fr", ""));
+			}
+		}
 	}
 
 	private void save(prRegion pr) {
@@ -92,7 +97,7 @@ public class prCommand implements CommandExecutor {
 		if (!f.exists()) {
 			f.getParentFile().mkdirs();
 			try {
-			f.createNewFile();
+				f.createNewFile();
 			} catch (Exception e) {}
 		}
 		try {
@@ -103,44 +108,47 @@ public class prCommand implements CommandExecutor {
 			gzipo.close();
 		} catch (Exception e) {}
 	}
-	
-	public void load() {
-		for (World w : plugin.getServer().getWorlds()) {
-			File f = new File(plugin.getDataFolder(), "saves/" +w.getName() + "/");
-			for (File file : f.listFiles()) {
-				try {
-					
-					GZIPInputStream gzipi = new GZIPInputStream(new FileInputStream(file));
-					DataInputStream in = new DataInputStream(gzipi);
-					prRegion pr = new prRegion();
-					pr.load(in, file.getName().replace(".fr", ""), w);
-					System.out.println(file.getName() + " loaded!");
-					regions.add(pr);
-					in.close();
-					gzipi.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		}
-	}
+
 
 	private prRegion createNewRegion(Player player) {
-		int x1 = plugin.listener.block1.get(player).getBlockX();
-		int y1 = plugin.listener.block1.get(player).getBlockY();
-		int z1 = plugin.listener.block1.get(player).getBlockZ();
-		int x2 = plugin.listener.block2.get(player).getBlockX();
-		int y2 = plugin.listener.block2.get(player).getBlockY();
-		int z2 = plugin.listener.block2.get(player).getBlockZ();;
-		player.sendMessage("derp1");
+		int x1,y1,z1;
+		try {
+			x1 = player.getMetadata("x1").get(0).asInt();
+			y1 = player.getMetadata("y1").get(0).asInt();
+			z1 = player.getMetadata("z1").get(0).asInt();
+		} catch (Exception e) {
+			player.sendMessage(ChatColor.RED + "Select point 1 first.");
+			return null;
+		}
+
+		player.removeMetadata("x1", plugin);
+		player.removeMetadata("y1", plugin);
+		player.removeMetadata("z1", plugin);
+		int x2,y2,z2;
+		try{
+			x2 = player.getMetadata("x2").get(0).asInt();
+			y2 = player.getMetadata("y2").get(0).asInt();
+			z2 = player.getMetadata("z2").get(0).asInt();
+
+		} catch (Exception e) {
+			player.sendMessage(ChatColor.RED + "Select point 2 first.");
+			return null;
+		}
+
+		player.removeMetadata("x2", plugin);
+		player.removeMetadata("y2", plugin);
+		player.removeMetadata("z2", plugin);
+		player.sendMessage(ChatColor.GREEN + "Region created!");
 		return new prRegion(player.getWorld(),x1,y1,z1,x2,y2,z2);
 	}
 
 	private void showHelp(Player player) {
-		player.sendMessage("select");
-		player.sendMessage("name");
-		player.sendMessage("create");
-		player.sendMessage("set");
+		player.sendMessage("Select");
+		player.sendMessage("Name");
+		player.sendMessage("Create");
+		player.sendMessage("Set");
+		player.sendMessage("List");
+		player.sendMessage("Delete");
 
 	}
 
