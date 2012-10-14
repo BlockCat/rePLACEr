@@ -1,5 +1,5 @@
 name: PlaceReplacer
-main: me.blockcat.placereplacer.PlaceReplacer
+main: me.blockcat.replace.RePlace
 version: 1
 commands:
  pro:

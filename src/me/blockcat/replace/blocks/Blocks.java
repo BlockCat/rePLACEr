@@ -1,4 +1,4 @@
-package me.blockcat.placereplacer.blocks;
+package me.blockcat.replace.blocks;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

@@ -1,4 +1,4 @@
-package me.blockcat.placereplacer;
+package me.blockcat.replace;
 
 import java.io.DataOutputStream;
 import java.io.File;
@@ -20,11 +20,11 @@ import org.bukkit.entity.Player;
 public class prCommand implements CommandExecutor {
 
 
-	private PlaceReplacer plugin;
+	private RePlace plugin;
 	private List<String> regions = new ArrayList<String>();
 	private HashMap<Player, String> selected = new HashMap<Player, String>();
 
-	public prCommand(PlaceReplacer plugin) {
+	public prCommand(RePlace plugin) {
 		this.plugin = plugin;
 	}
 
@@ -51,6 +51,7 @@ public class prCommand implements CommandExecutor {
 					}
 				}
 			}
+			
 		} else if (args[0].equalsIgnoreCase("create")) {
 
 			if (args.length > 1) {
@@ -67,8 +68,20 @@ public class prCommand implements CommandExecutor {
 			} else {
 				player.sendMessage(ChatColor.AQUA + "Please provide a name.");
 			}
-		} else if (args[0].equalsIgnoreCase("set")) {
+			
+		} else if (args[0].equalsIgnoreCase("delete")) {
 			prRegion pr = new prRegion();
+			pr.delete(selected.get(player), player.getWorld());
+			regions.remove(selected.get(player));
+			selected.remove(player);
+			player.sendMessage(ChatColor.DARK_RED + "Region deleted.");
+			
+		} else if (args[0].equalsIgnoreCase("replace")) {
+			prRegion pr = new prRegion();
+			if (!selected.containsKey(player)) {
+				player.sendMessage(ChatColor.RED + "You did not select a region.");
+				return true;
+			}
 			pr.place(selected.get(player), player.getWorld());
 			player.sendMessage(ChatColor.GREEN + "Done");
 
@@ -143,12 +156,12 @@ public class prCommand implements CommandExecutor {
 	}
 
 	private void showHelp(Player player) {
-		player.sendMessage("Select");
-		player.sendMessage("Name");
-		player.sendMessage("Create");
-		player.sendMessage("Set");
-		player.sendMessage("List");
-		player.sendMessage("Delete");
+		player.sendMessage(ChatColor.GOLD + "Select " 		+ ChatColor.AQUA	+ "<Name> : " + ChatColor.GREEN + "Select region.");
+		player.sendMessage(ChatColor.GOLD + "Create " 		+ ChatColor.AQUA	+ "<Name> : " + ChatColor.GREEN + "Create region.");
+		player.sendMessage(ChatColor.GOLD + "Delete : " 	+ ChatColor.GREEN	+ "Delete selected region.");
+		player.sendMessage(ChatColor.GOLD + "Replace : "	+ ChatColor.GREEN	+ "Replace selected region.");
+		player.sendMessage(ChatColor.GOLD + "List : " 		+ ChatColor.GREEN	+ "Show a list of available regions.");
+		
 
 	}
 

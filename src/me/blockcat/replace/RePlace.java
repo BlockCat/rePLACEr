@@ -1,12 +1,12 @@
-package me.blockcat.placereplacer;
+package me.blockcat.replace;
 
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class PlaceReplacer extends JavaPlugin {
+public class RePlace extends JavaPlugin {
 
 	private prCommand commands;
 	public prListener listener;
-	
+
 	public void onEnable() {
 		listener = new prListener(this);
 		commands = new prCommand(this);
@@ -14,7 +14,4 @@ public class PlaceReplacer extends JavaPlugin {
 		this.getCommand("pro").setExecutor(commands);
 		commands.load();
 	}
-
-	
-
 }

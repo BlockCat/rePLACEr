@@ -1,4 +1,4 @@
-package me.blockcat.placereplacer;
+package me.blockcat.replace;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
-import me.blockcat.placereplacer.blocks.Blocks;
-import me.blockcat.placereplacer.blocks.BlocksChest;
+import me.blockcat.replace.blocks.Blocks;
+import me.blockcat.replace.blocks.BlocksChest;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -20,13 +20,6 @@ import org.bukkit.block.Block;
 import org.bukkit.util.Vector;
 
 public class prRegion {
-
-	private int x1;
-	private int y1;
-	private int z1;
-	private int x2;
-	private int y2;
-	private int z2;
 
 	private String name;
 	private Vector v1;
@@ -69,6 +62,9 @@ public class prRegion {
 
 	public void loadFromFile(String file, World world) {
 		File f = new File("plugins/placereplacer/saves/" +world.getName() + "/" +file + ".fr");
+		if (!f.exists()) {
+			return;
+		}
 		try {
 		GZIPInputStream gzipi = new GZIPInputStream(new FileInputStream(f));
 		DataInputStream in = new DataInputStream(gzipi);
@@ -148,6 +144,13 @@ public class prRegion {
 		this.loadFromFile(string, world);
 		for (Blocks bl : blocks) {
 			bl.set();
+		}
+	}
+
+	public void delete(String file, World world) {
+		File f = new File("plugins/placereplacer/saves/" +world.getName() + "/" +file + ".fr");
+		if (f.exists()) {
+			f.delete();
 		}
 	}
 
