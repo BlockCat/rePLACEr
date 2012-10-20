@@ -61,6 +61,5 @@ public class BlocksChest extends Blocks{
 		for (ItemStack item : content) {
 			chestNew.getBlockInventory().addItem(item);
 		}
-
 	}
 }

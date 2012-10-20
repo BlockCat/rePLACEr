@@ -10,10 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
+import me.blockcat.replace.blocks.BlocksSign;
 import me.blockcat.replace.blocks.Blocks;
 import me.blockcat.replace.blocks.BlocksChest;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -48,6 +48,8 @@ public class prRegion {
 					int d = in.readInt();
 					if (d == Material.CHEST.getId()) {
 						blocks.add(new BlocksChest(in, world));
+					} else if (d == Material.SIGN.getId() || d == Material.SIGN_POST.getId()) {
+						blocks.add(new BlocksSign(in, world));
 					} else {
 						blocks.add(new Blocks(in, world));
 					}
@@ -117,7 +119,13 @@ public class prRegion {
 					Block block = world.getBlockAt(x, y, z);
 					int id = block.getTypeId();
 					if (id == Material.CHEST.getId()) {
-						blocks.add(new BlocksChest(world, x, y, z, 54, block
+						blocks.add(new BlocksChest(world, x, y, z, Material.CHEST.getId(), block
+								.getData(), block.getState()));
+					} else if (id == Material.SIGN.getId()) {
+						blocks.add(new BlocksSign(world, x, y, z, Material.SIGN.getId(), block
+								.getData(), block.getState()));
+					} else if (id == Material.SIGN_POST.getId()) {
+						blocks.add(new BlocksSign(world, x, y, z, Material.SIGN_POST.getId(), block
 								.getData(), block.getState()));
 					} else {
 						blocks.add(new Blocks(world, x, y, z, id, block
